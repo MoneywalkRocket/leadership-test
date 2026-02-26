@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import { toPng } from "html-to-image";
 import type { ScoringResult, TypeDescription, TypeCode } from "@/lib/types";
 import { workshopData } from "@/lib/workshop";
@@ -71,32 +71,31 @@ function BackBtn({ onClick }: { onClick: () => void }) {
 }
 
 // ── 1. Self-Reflection ──
-function ReflectionView({ questions, typeCode, onBack }: { questions: string[]; typeCode: string; onBack: () => void }) {
-  const storageKey = `reflection-notes-${typeCode}`;
+function ReflectionView({ questions, typeDesc, onBack }: { questions: string[]; typeDesc: TypeDescription; onBack: () => void }) {
   const [notes, setNotes] = useState<Record<number, string>>({});
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  // Load saved notes from localStorage on mount
-  useEffect(() => {
+  const hasContent = Object.values(notes).some((v) => v.trim().length > 0);
+
+  const handleSaveImage = useCallback(async () => {
+    if (!cardRef.current) return;
+    setSaving(true);
     try {
-      const raw = localStorage.getItem(storageKey);
-      if (raw) {
-        const data = JSON.parse(raw) as { question: string; answer: string }[];
-        const loaded: Record<number, string> = {};
-        data.forEach((item, i) => {
-          if (item.answer) loaded[i] = item.answer;
-        });
-        setNotes(loaded);
-      }
-    } catch { /* ignore parse errors */ }
-  }, [storageKey]);
-
-  const handleSave = () => {
-    const data = questions.map((q, i) => ({ question: q, answer: notes[i] || "" }));
-    localStorage.setItem(storageKey, JSON.stringify(data));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
+      const dataUrl = await toPng(cardRef.current, { pixelRatio: 2, backgroundColor: "#ffffff" });
+      const link = document.createElement("a");
+      link.download = `셀프리플렉션-${typeDesc.name}.png`;
+      link.href = dataUrl;
+      link.click();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch {
+      alert("이미지 저장에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setSaving(false);
+    }
+  }, [typeDesc.name]);
 
   return (
     <div>
@@ -105,7 +104,7 @@ function ReflectionView({ questions, typeCode, onBack }: { questions: string[]; 
         <span className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center text-xl">🪞</span>
         <div>
           <h2 className="text-lg font-bold text-gray-900">셀프 리플렉션</h2>
-          <p className="text-xs text-gray-400">솔직하게 적을수록, 더 깊은 대화가 됩니다</p>
+          <p className="text-xs text-gray-400">솔직하게 적고, 이미지로 저장하세요</p>
         </div>
       </div>
       <div className="space-y-5">
@@ -128,13 +127,51 @@ function ReflectionView({ questions, typeCode, onBack }: { questions: string[]; 
           </div>
         ))}
       </div>
-      <button
-        onClick={handleSave}
-        className="w-full mt-5 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-purple-500 to-indigo-500 hover:shadow-lg transition-all"
-      >
-        {saved ? "저장 완료!" : "내 회고 저장하기"}
-      </button>
-      <p className="text-center text-xs text-gray-400 mt-2">브라우저에 저장됩니다. 워크샵에서 짝과 나눠보세요.</p>
+
+      {/* Exportable card (rendered when there's content) */}
+      {hasContent && (
+        <>
+          <div className="mt-6 mb-4">
+            <p className="text-xs text-gray-400 text-center mb-3">아래 카드가 이미지로 저장됩니다</p>
+            <div ref={cardRef} className="p-6 rounded-2xl border border-purple-200 bg-white">
+              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+                <span className="text-2xl">{typeDesc.emoji}</span>
+                <div>
+                  <div className="font-bold text-gray-900">{typeDesc.name}</div>
+                  <div className="text-xs text-gray-400">{typeDesc.nameKo} | 셀프 리플렉션</div>
+                </div>
+              </div>
+              {questions.map((q, i) => {
+                const answer = (notes[i] || "").trim();
+                if (!answer) return null;
+                return (
+                  <div key={i} className={i > 0 ? "mt-4 pt-4 border-t border-gray-100" : ""}>
+                    <div className="flex items-start gap-2 mb-1.5">
+                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-[10px] font-bold">
+                        Q{i + 1}
+                      </span>
+                      <p className="text-xs text-purple-700 font-medium leading-relaxed">{q}</p>
+                    </div>
+                    <p className="text-sm text-gray-700 pl-7 leading-relaxed">{answer}</p>
+                  </div>
+                );
+              })}
+              <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-300 text-right">
+                Leadership Type Test | Self Reflection
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={handleSaveImage}
+            disabled={saving}
+            className="w-full py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-purple-500 to-indigo-500 hover:shadow-lg transition-all disabled:opacity-50"
+          >
+            {saved ? "저장 완료!" : saving ? "이미지 생성 중..." : "이미지로 저장하기"}
+          </button>
+          <p className="text-center text-xs text-gray-400 mt-2">워크샵에서 짝과 나눠보세요</p>
+        </>
+      )}
     </div>
   );
 }
@@ -537,7 +574,7 @@ export default function WorkshopOverlay({ result, typeDesc }: Props) {
             <div className="max-w-lg mx-auto">
               {view === "hub" && <Hub onNavigate={setView} />}
               {view === "reflection" && (
-                <ReflectionView questions={workshop.reflectionQuestions} typeCode={result.typeCode} onBack={() => setView("hub")} />
+                <ReflectionView questions={workshop.reflectionQuestions} typeDesc={typeDesc} onBack={() => setView("hub")} />
               )}
               {view === "discussion" && (
                 <DiscussionView scenarios={workshop.discussionScenarios} onBack={() => setView("hub")} />
