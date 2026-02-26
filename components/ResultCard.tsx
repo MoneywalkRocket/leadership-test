@@ -24,11 +24,38 @@ const COMPOSITE_GROUPS: {
   emoji: string;
   gradient: string;
   factors: FactorId[];
+  desc: string;
+  high: string;
+  low: string;
 }[] = [
-  { id: "TF", name: "변혁적 리더십", nameEn: "Transformational", emoji: "🔥", gradient: "from-violet-500 to-indigo-500", factors: ["II", "IM", "IS", "IC"] },
-  { id: "TA", name: "거래적 리더십", nameEn: "Transactional", emoji: "⚖️", gradient: "from-emerald-500 to-green-500", factors: ["CR", "MBEA"] },
-  { id: "PAc", name: "방임적 리더십", nameEn: "Passive/Avoidant", emoji: "🌊", gradient: "from-rose-400 to-pink-500", factors: ["PA"] },
-  { id: "SV", name: "서번트 리더십", nameEn: "Servant Leadership", emoji: "🤲", gradient: "from-teal-500 to-cyan-500", factors: ["SV"] },
+  {
+    id: "TF", name: "변혁적 리더십", nameEn: "Transformational", emoji: "🔥",
+    gradient: "from-violet-500 to-indigo-500", factors: ["II", "IM", "IS", "IC"],
+    desc: "비전과 영감으로 팀을 이끌고, 구성원의 성장과 변화를 촉진하는 스타일",
+    high: "비전 제시, 동기부여, 혁신 촉진, 개인 맞춤 코칭에 강합니다. 팀에 방향감과 에너지를 불어넣는 핵심 동력입니다.",
+    low: "실행과 안정에 집중하는 편입니다. 팀이 방향을 잃거나 에너지가 떨어질 때, 의도적으로 '왜 이 일을 하는가'를 공유해보세요.",
+  },
+  {
+    id: "TA", name: "거래적 리더십", nameEn: "Transactional", emoji: "⚖️",
+    gradient: "from-emerald-500 to-green-500", factors: ["CR", "MBEA"],
+    desc: "명확한 기준과 보상, 체계적 관리를 통해 안정적 성과를 만드는 스타일",
+    high: "목표-보상을 명확히 연결하고, 문제를 조기에 감지해 체계적으로 관리합니다. 팀의 예측 가능성과 공정성이 높습니다.",
+    low: "기대치가 암묵적이거나 관리가 느슨할 수 있습니다. 프로젝트 시작 시 성공 기준과 체크 포인트를 명시해보세요.",
+  },
+  {
+    id: "PAc", name: "방임적 리더십", nameEn: "Passive/Avoidant", emoji: "🌊",
+    gradient: "from-rose-400 to-pink-500", factors: ["PA"],
+    desc: "팀의 자율에 맡기며 관망하는 스타일. 과도하면 리더십 공백으로 이어질 수 있음",
+    high: "상황을 지켜보며 팀의 자생력을 믿는 편입니다. 다만 문제가 커진 후 대응하는 패턴이 반복되지 않도록 최소 개입 기준을 정해두세요.",
+    low: "적극적이고 선제적인 리더십을 발휘합니다. 모든 것에 개입하면 팀의 자율성이 줄어들 수 있으니, 위임할 영역을 구분하세요.",
+  },
+  {
+    id: "SV", name: "서번트 리더십", nameEn: "Servant Leadership", emoji: "🤲",
+    gradient: "from-teal-500 to-cyan-500", factors: ["SV"],
+    desc: "구성원의 성장과 웰빙을 최우선으로 두고, 권한 위임과 경청을 실천하는 스타일",
+    high: "구성원을 진심으로 배려하고 성장을 지원합니다. 높은 신뢰와 충성도를 이끌어내는 강점이지만, 때로는 단호한 결정도 필요합니다.",
+    low: "성과와 효율을 우선시하는 실용적 리더십입니다. 구성원이 '도구'가 아닌 '사람'으로 느끼도록, 회의에서 먼저 의견을 묻는 작은 시그널부터 시작해보세요.",
+  },
 ];
 
 const AXIS_META = [
@@ -130,53 +157,60 @@ export default function ResultCard({ result, typeDesc }: ResultCardProps) {
         <h2 className="text-lg font-bold text-gray-900 mb-2">리더십 스타일 프로필</h2>
         <p className="text-xs text-gray-400 mb-5">4가지 리더십 스타일별 강도와 구성 요인</p>
         <div className="space-y-5">
-          {COMPOSITE_GROUPS.map(({ id, name, nameEn, emoji, gradient, factors: groupFactors }) => {
+          {COMPOSITE_GROUPS.map(({ id, name, nameEn, emoji, gradient, factors: groupFactors, desc, high, low }) => {
             const compositeScore = result.composites[id as keyof typeof result.composites];
             const zVal = result.zScores[id as keyof typeof result.zScores];
             const level = zVal > 0.5 ? "강함" : zVal < -0.5 ? "약함" : "보통";
             const levelColor = zVal > 0.5 ? "text-emerald-600 bg-emerald-50" : zVal < -0.5 ? "text-amber-600 bg-amber-50" : "text-gray-500 bg-gray-50";
+            const interpretation = zVal > 0.5 ? high : zVal < -0.5 ? low : high;
 
             return (
               <div key={id} className="rounded-xl border border-gray-100 overflow-hidden">
-                <div className="flex items-center justify-between p-4 bg-gray-50/50">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">{emoji}</span>
-                    <div>
-                      <div className="text-sm font-bold text-gray-900">{name}</div>
-                      <div className="text-[10px] text-gray-400">{nameEn}</div>
+                <div className="p-4 bg-gray-50/50">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">{emoji}</span>
+                      <div>
+                        <div className="text-sm font-bold text-gray-900">{name}</div>
+                        <div className="text-[10px] text-gray-400">{nameEn}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-mono font-bold text-gray-700">{compositeScore.toFixed(1)}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${levelColor}`}>{level}</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-mono font-bold text-gray-700">{compositeScore.toFixed(1)}</span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${levelColor}`}>{level}</span>
-                  </div>
+                  <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
                 </div>
-                <div className="px-4 pb-3 pt-2">
+                <div className="px-4 pb-4 pt-2">
                   <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-3">
                     <div
                       className={`h-full bg-gradient-to-r ${gradient} rounded-full transition-all`}
                       style={{ width: `${(compositeScore / maxScore) * 100}%` }}
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-                    {groupFactors.map((fid) => {
-                      const fScore = result.factors[fid];
-                      return (
-                        <div key={fid} className="flex items-center justify-between">
-                          <span className="text-[11px] text-gray-500 truncate">{factorLabels[fid]?.short ?? fid}</span>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-12 h-1 bg-gray-100 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full bg-gradient-to-r ${FACTOR_GRADIENTS[fid] ?? "from-gray-400 to-gray-500"} rounded-full`}
-                                style={{ width: `${(fScore / maxScore) * 100}%` }}
-                              />
+                  <p className="text-xs text-gray-600 leading-relaxed mb-3">{interpretation}</p>
+                  <Toggle title="구성 요인 보기">
+                    <div className="grid grid-cols-1 gap-2">
+                      {groupFactors.map((fid) => {
+                        const fScore = result.factors[fid];
+                        return (
+                          <div key={fid} className="flex items-center justify-between">
+                            <span className="text-xs text-gray-500">{factorLabels[fid]?.full ?? fid}</span>
+                            <div className="flex items-center gap-2">
+                              <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full bg-gradient-to-r ${FACTOR_GRADIENTS[fid] ?? "from-gray-400 to-gray-500"} rounded-full`}
+                                  style={{ width: `${(fScore / maxScore) * 100}%` }}
+                                />
+                              </div>
+                              <span className="text-[11px] font-mono text-gray-400 w-7 text-right">{fScore.toFixed(1)}</span>
                             </div>
-                            <span className="text-[10px] font-mono text-gray-400 w-6 text-right">{fScore.toFixed(1)}</span>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  </Toggle>
                 </div>
               </div>
             );
