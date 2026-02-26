@@ -1,0 +1,19 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Response {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  answers   Json
+  scores    Json
+  typeCode  String
+  typeName  String
+  locale    String?
+  userAgent String?
+}
