@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { toPng } from "html-to-image";
 import type { ScoringResult, TypeDescription, TypeCode } from "@/lib/types";
 import { workshopData } from "@/lib/workshop";
@@ -71,14 +71,29 @@ function BackBtn({ onClick }: { onClick: () => void }) {
 }
 
 // ── 1. Self-Reflection ──
-function ReflectionView({ questions, onBack }: { questions: string[]; onBack: () => void }) {
+function ReflectionView({ questions, typeCode, onBack }: { questions: string[]; typeCode: string; onBack: () => void }) {
+  const storageKey = `reflection-notes-${typeCode}`;
   const [notes, setNotes] = useState<Record<number, string>>({});
   const [saved, setSaved] = useState(false);
 
+  // Load saved notes from localStorage on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) {
+        const data = JSON.parse(raw) as { question: string; answer: string }[];
+        const loaded: Record<number, string> = {};
+        data.forEach((item, i) => {
+          if (item.answer) loaded[i] = item.answer;
+        });
+        setNotes(loaded);
+      }
+    } catch { /* ignore parse errors */ }
+  }, [storageKey]);
+
   const handleSave = () => {
-    // Save to localStorage
     const data = questions.map((q, i) => ({ question: q, answer: notes[i] || "" }));
-    localStorage.setItem("reflection-notes", JSON.stringify(data));
+    localStorage.setItem(storageKey, JSON.stringify(data));
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -522,7 +537,7 @@ export default function WorkshopOverlay({ result, typeDesc }: Props) {
             <div className="max-w-lg mx-auto">
               {view === "hub" && <Hub onNavigate={setView} />}
               {view === "reflection" && (
-                <ReflectionView questions={workshop.reflectionQuestions} onBack={() => setView("hub")} />
+                <ReflectionView questions={workshop.reflectionQuestions} typeCode={result.typeCode} onBack={() => setView("hub")} />
               )}
               {view === "discussion" && (
                 <DiscussionView scenarios={workshop.discussionScenarios} onBack={() => setView("hub")} />

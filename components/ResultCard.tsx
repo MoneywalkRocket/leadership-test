@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { ScoringResult, TypeDescription, FactorId, TypeCode } from "@/lib/types";
 import { factorLabels, typeMap } from "@/lib/results";
-import { axisDetails, factorDetails, generateInsights } from "@/lib/analysis";
+import { axisDetails, generateInsights } from "@/lib/analysis";
 
 interface ResultCardProps {
   result: ScoringResult;
@@ -16,6 +16,20 @@ const FACTOR_GRADIENTS: Record<string, string> = {
   CR: "from-emerald-500 to-green-600", MBEA: "from-amber-500 to-orange-500",
   PA: "from-rose-400 to-pink-500", SV: "from-teal-500 to-cyan-600",
 };
+
+const COMPOSITE_GROUPS: {
+  id: string;
+  name: string;
+  nameEn: string;
+  emoji: string;
+  gradient: string;
+  factors: FactorId[];
+}[] = [
+  { id: "TF", name: "변혁적 리더십", nameEn: "Transformational", emoji: "🔥", gradient: "from-violet-500 to-indigo-500", factors: ["II", "IM", "IS", "IC"] },
+  { id: "TA", name: "거래적 리더십", nameEn: "Transactional", emoji: "⚖️", gradient: "from-emerald-500 to-green-500", factors: ["CR", "MBEA"] },
+  { id: "PAc", name: "방임적 리더십", nameEn: "Passive/Avoidant", emoji: "🌊", gradient: "from-rose-400 to-pink-500", factors: ["PA"] },
+  { id: "SV", name: "서번트 리더십", nameEn: "Servant Leadership", emoji: "🤲", gradient: "from-teal-500 to-cyan-500", factors: ["SV"] },
+];
 
 const AXIS_META = [
   { key: "D1" as const, left: "V", leftFull: "Visionary", right: "O", rightFull: "Operator" },
@@ -40,7 +54,6 @@ function Toggle({ title, children, defaultOpen = false }: { title: string; child
 }
 
 export default function ResultCard({ result, typeDesc }: ResultCardProps) {
-  const factors = Object.entries(result.factors) as [FactorId, number][];
   const maxScore = 7;
   const insights = generateInsights(result.topFactors, result.bottomFactor, result.axes);
   return (
@@ -66,9 +79,10 @@ export default function ResultCard({ result, typeDesc }: ResultCardProps) {
           {AXIS_META.map(({ key, left, leftFull, right, rightFull }) => {
             const val = result.axes[key];
             const clamped = Math.max(-3, Math.min(3, val));
-            // positive val = left side, negative = right side
-            // pct: 100% = far left, 0% = far right, 50% = center
-            const pct = ((clamped + 3) / 6) * 100;
+            // positive val = left side (V/E/A/H), negative = right side (O/C/R/P)
+            // CSS left: 0% = left edge, 100% = right edge
+            // So positive val → low pct (left), negative val → high pct (right)
+            const pct = ((3 - clamped) / 6) * 100;
             const isLeft = val >= 0;
             const detail = axisDetails[key];
 
@@ -111,31 +125,59 @@ export default function ResultCard({ result, typeDesc }: ResultCardProps) {
         </div>
       </div>
 
-      {/* Factor scores */}
+      {/* Leadership Style Profile */}
       <div className="bg-white rounded-2xl p-6 shadow-sm">
-        <h2 className="text-lg font-bold text-gray-900 mb-5">요인별 점수</h2>
-        <div className="space-y-4">
-          {factors.map(([fid, score]) => {
-            const detail = factorDetails[fid];
-            const isHigh = score >= 4.5;
+        <h2 className="text-lg font-bold text-gray-900 mb-2">리더십 스타일 프로필</h2>
+        <p className="text-xs text-gray-400 mb-5">4가지 리더십 스타일별 강도와 구성 요인</p>
+        <div className="space-y-5">
+          {COMPOSITE_GROUPS.map(({ id, name, nameEn, emoji, gradient, factors: groupFactors }) => {
+            const compositeScore = result.composites[id as keyof typeof result.composites];
+            const zVal = result.zScores[id as keyof typeof result.zScores];
+            const level = zVal > 0.5 ? "강함" : zVal < -0.5 ? "약함" : "보통";
+            const levelColor = zVal > 0.5 ? "text-emerald-600 bg-emerald-50" : zVal < -0.5 ? "text-amber-600 bg-amber-50" : "text-gray-500 bg-gray-50";
+
             return (
-              <div key={fid}>
-                <div className="flex justify-between text-sm mb-1.5">
-                  <span className="text-gray-700 font-medium">{factorLabels[fid]?.full ?? fid}</span>
-                  <span className="text-gray-400 font-mono text-xs">{score.toFixed(1)} / 7</span>
+              <div key={id} className="rounded-xl border border-gray-100 overflow-hidden">
+                <div className="flex items-center justify-between p-4 bg-gray-50/50">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">{emoji}</span>
+                    <div>
+                      <div className="text-sm font-bold text-gray-900">{name}</div>
+                      <div className="text-[10px] text-gray-400">{nameEn}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-mono font-bold text-gray-700">{compositeScore.toFixed(1)}</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${levelColor}`}>{level}</span>
+                  </div>
                 </div>
-                <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className={`factor-bar h-full bg-gradient-to-r ${FACTOR_GRADIENTS[fid] ?? "from-gray-400 to-gray-500"}`}
-                    style={{ width: `${(score / maxScore) * 100}%` }}
-                  />
+                <div className="px-4 pb-3 pt-2">
+                  <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-3">
+                    <div
+                      className={`h-full bg-gradient-to-r ${gradient} rounded-full transition-all`}
+                      style={{ width: `${(compositeScore / maxScore) * 100}%` }}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                    {groupFactors.map((fid) => {
+                      const fScore = result.factors[fid];
+                      return (
+                        <div key={fid} className="flex items-center justify-between">
+                          <span className="text-[11px] text-gray-500 truncate">{factorLabels[fid]?.short ?? fid}</span>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-12 h-1 bg-gray-100 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full bg-gradient-to-r ${FACTOR_GRADIENTS[fid] ?? "from-gray-400 to-gray-500"} rounded-full`}
+                                style={{ width: `${(fScore / maxScore) * 100}%` }}
+                              />
+                            </div>
+                            <span className="text-[10px] font-mono text-gray-400 w-6 text-right">{fScore.toFixed(1)}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                {detail && (
-                  <Toggle title="이 점수의 의미">
-                    <p>{isHigh ? detail.high : detail.low}</p>
-                    <p className="text-indigo-600 font-medium">Tip: {detail.tip}</p>
-                  </Toggle>
-                )}
               </div>
             );
           })}
