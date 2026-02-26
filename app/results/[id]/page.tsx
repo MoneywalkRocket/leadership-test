@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
-import { getResponse } from "@/lib/storage";
+import { decodeAnswers } from "@/lib/encode";
+import { score } from "@/lib/scoring";
 import { typeMap } from "@/lib/results";
-import type { ScoringResult, TypeCode } from "@/lib/types";
+import type { TypeCode } from "@/lib/types";
 import ResultsClient from "./ResultsClient";
 
 interface Props {
@@ -9,13 +10,13 @@ interface Props {
 }
 
 export default async function ResultsPage({ params }: Props) {
-  const data = await getResponse(params.id);
+  const answers = decodeAnswers(params.id);
 
-  if (!data) {
+  if (!answers) {
     notFound();
   }
 
-  const scores = data.scores as ScoringResult;
+  const scores = score(answers);
   const typeDesc = typeMap.get(scores.typeCode as TypeCode);
 
   if (!typeDesc) {

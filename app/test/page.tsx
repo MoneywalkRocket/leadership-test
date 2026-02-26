@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { questions, TOTAL_QUESTIONS } from "@/lib/questions";
+import { encodeAnswers } from "@/lib/encode";
 import type { Answers } from "@/lib/types";
 
 type Direction = "next" | "prev" | null;
@@ -75,37 +76,19 @@ export default function TestPage() {
     goTo(currentIdx + 1, "next");
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     const finalAnswers = { ...answers };
     for (let i = 1; i <= TOTAL_QUESTIONS; i++) {
       if (finalAnswers[i] === undefined) {
         finalAnswers[i] = 4;
       }
     }
-    setAnswers(finalAnswers);
 
     if (submitting) return;
     setSubmitting(true);
-    setError(null);
 
-    try {
-      const res = await fetch("/api/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answers: finalAnswers }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "제출에 실패했습니다.");
-      }
-
-      const { id } = await res.json();
-      router.push(`/results/${id}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "알 수 없는 오류");
-      setSubmitting(false);
-    }
+    const encoded = encodeAnswers(finalAnswers);
+    router.push(`/results/${encoded}`);
   };
 
   const animClass = isAnimating
