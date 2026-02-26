@@ -135,14 +135,14 @@ export const questions: BipolarQuestion[] = [
     factorA: "IC",
     factorB: "MBEA",
   },
-  // ── 15. IM vs MBEA ──
+  // ── 15. IM vs II ──
   {
     id: 15,
     scenario: "마감이 빠듯한 상황에서 나의 리더십 스타일은?",
     sideA: "팀에게 이 과제의 의미를 상기시키며 동기를 끌어올린다",
-    sideB: "체크리스트를 만들고, 진행 상황을 촘촘히 추적한다",
+    sideB: "원칙과 기준을 명확히 제시하고, 스스로 솔선수범하는 모습을 보여준다",
     factorA: "IM",
-    factorB: "MBEA",
+    factorB: "II",
   },
   // ── 16. II vs CR ──
   {
@@ -162,14 +162,14 @@ export const questions: BipolarQuestion[] = [
     factorA: "SV",
     factorB: "II",
   },
-  // ── 18. IS vs CR ──
+  // ── 18. IS vs IC ──
   {
     id: 18,
     scenario: "분기 목표를 설정할 때 나의 스타일은?",
     sideA: "기존 목표를 뒤집을 수 있는 실험적 목표도 포함한다",
-    sideB: "달성 가능한 수치를 명확히 정하고 보상 체계를 연결한다",
+    sideB: "각 구성원의 역량과 성장 니즈에 맞춰 개인별 목표를 조정한다",
     factorA: "IS",
-    factorB: "CR",
+    factorB: "IC",
   },
   // ── 19. PA vs IS ──
   {
@@ -207,14 +207,14 @@ export const questions: BipolarQuestion[] = [
     factorA: "CR",
     factorB: "PA",
   },
-  // ── 23. SV vs MBEA ──
+  // ── 23. SV vs PA ──
   {
     id: 23,
     scenario: "권한을 위임할 때 나의 방식은?",
     sideA: "실패해도 안전한 범위를 함께 정하고 자율에 맡긴다",
-    sideB: "명확한 보고 체계와 중간 점검 포인트를 설정한다",
+    sideB: "맡긴 이상 크게 관여하지 않고 결과가 나올 때까지 기다린다",
     factorA: "SV",
-    factorB: "MBEA",
+    factorB: "PA",
   },
   // ── 24. II vs IS ──
   {

@@ -22,17 +22,20 @@ import type {
 // Each factor's score = mean of all contributions touching it (1–7).
 // ═══════════════════════════════════════════════════════════════════
 
-// ── Beta-phase normative data (μ, σ) ──
-// Bipolar questions center around 4.0 with tighter spread.
+// ── Normative data (μ, σ) ──
+// σ is differentiated by aggregation level:
+//   - TF (mean of 4 factors): lower σ because averaging reduces variance
+//   - TA (mean of 2 factors): moderate σ
+//   - Single factors (PA, SV, IC, etc.): higher σ due to higher natural variance
 const NORM: Record<string, { mu: number; sigma: number }> = {
-  TF:   { mu: 4.0, sigma: 0.8 },
-  TA:   { mu: 4.0, sigma: 0.8 },
-  PAc:  { mu: 4.0, sigma: 0.9 },
-  SV:   { mu: 4.0, sigma: 0.8 },
-  IC:   { mu: 4.0, sigma: 0.8 },
-  MBEA: { mu: 4.0, sigma: 0.8 },
-  IS:   { mu: 4.0, sigma: 0.8 },
-  CR:   { mu: 4.0, sigma: 0.8 },
+  TF:   { mu: 4.0, sigma: 0.7 },   // 4-factor composite → less variance
+  TA:   { mu: 4.0, sigma: 0.75 },   // 2-factor composite → moderate variance
+  PAc:  { mu: 4.0, sigma: 0.95 },   // single factor → more variance
+  SV:   { mu: 4.0, sigma: 0.9 },    // single factor
+  IC:   { mu: 4.0, sigma: 0.85 },   // individual factor for axis use
+  MBEA: { mu: 4.0, sigma: 0.85 },   // individual factor for axis use
+  IS:   { mu: 4.0, sigma: 0.85 },   // individual factor for axis use
+  CR:   { mu: 4.0, sigma: 0.85 },   // individual factor for axis use
 };
 
 // ── Helpers ──
@@ -101,13 +104,20 @@ function computeZScores(c: CompositeScores, f: FactorScores): ZScores {
 }
 
 // ── Step 4: Axis determination ──
+// Each axis now uses distinct primary factors to reduce double-counting:
+//   D1: Composite-level comparison (TF vs TA)
+//   D2: SV vs MBEA — each appears as primary factor in ONE axis only
+//   D3: Active management (MBEA+IS averaged) vs Passive (PA)
+//   D4: IC vs CR — each appears as primary factor in ONE axis only
+// Previous formulas had IC and MBEA each appearing in 3 axes,
+// causing type codes to be overly correlated (E↔H always together).
 
 function computeAxes(z: ZScores): AxisScores {
   return {
-    D1: z.TF - z.TA,                    // V vs O
-    D2: z.SV + z.IC - z.MBEA,           // E vs C
-    D3: z.MBEA + z.IS - z.PAc,          // A vs R
-    D4: z.IC + z.SV - z.CR,             // H vs P
+    D1: z.TF - z.TA,                    // V vs O: vision/transformation vs management/transaction
+    D2: z.SV - z.MBEA,                  // E vs C: servant/trust vs monitoring/control
+    D3: (z.MBEA + z.IS) / 2 - z.PAc,   // A vs R: proactive engagement vs passive avoidance
+    D4: z.IC - z.CR,                    // H vs P: individual care vs contingent reward
   };
 }
 
